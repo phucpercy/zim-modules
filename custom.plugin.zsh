@@ -203,3 +203,23 @@ function grtb() {
   local target_branch="${1:-develop}"
   git reset $(git merge-base "$target_branch" $(git branch --show-current))
 }
+
+function gc-ticket() {
+    # 1. Get the current branch name
+    local branch_name=$(git symbolic-ref --short HEAD 2>/dev/null)
+    
+    # 2. Extract the SPDT-XXXXX pattern
+    local ticket=$(echo "$branch_name" | grep -oE 'SPDT-[0-9]+')
+    
+    # 3. Strict Check: If no ticket is found, BLOCK the commit
+    if [ -z "$ticket" ]; then
+        echo "❌ ERROR: No 'SPDT-XXXXX' ticket found in branch name '$branch_name'."
+        echo "   Commit aborted! Please switch to a ticket branch or rename this branch."
+        return 1  # Exits the function with a failure code without committing
+    else
+        # 4. Proceed with commit if ticket exists
+        echo "🚀 Committing with ticket: $ticket"
+        git commit -m "$ticket $*"
+    fi
+}
+alias gcmt='gc-ticket'
